@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keynote 正計時器</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: transparent; /* 背景透明，完美融合簡報 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        /* 縮放容器：會根據外層視窗大小自動縮放內部元件 */
+        #scaler {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100px;
+            height: 100px;
+            transform-origin: center center;
+        }
+        /* 時間顯示 */
+        .timer-display {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333333;
+            font-variant-numeric: tabular-nums; /* 防止數字寬度不同導致抖動 */
+            border: none;
+            background: transparent;
+            text-align: center;
+            width: 100%;
+            padding: 0;
+            outline: none;
+        }
+        /* 按鈕容器 */
+        .controls {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        /* 按鈕基本樣式 */
+        button {
+            padding: 3px 8px;
+            font-size: 4px;
+            font-weight: 500;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+            color: white;
+        }
+        #startPauseBtn { background-color: #007AFF; }
+        #startPauseBtn:hover { background-color: #0063CC; }
+        #startPauseBtn.paused { background-color: #FF9500; }
+        #startPauseBtn.paused:hover { background-color: #E08200; }
+        #resetBtn { background-color: #8E8E93; }
+        #resetBtn:hover { background-color: #78787A; }
+    </style>
+</head>
+<body>
+
+    <div id="scaler">
+        <!-- 正計時初始為 00:00，改為 readonly 避免計時中被修改 -->
+        <input type="text" id="timeInput" class="timer-display" value="00:00" readonly>
+        
+        <div class="controls">
+            <button id="resetBtn">重置</button>
+            <button id="startPauseBtn">開始</button>
+        </div>
+    </div>
+
+    <script>
+        let countdown;
+        let totalSeconds = 0; // 改從 0 秒開始正計時
+        let isRunning = false;
+
+        const timeInput = document.getElementById('timeInput');
+        const startPauseBtn = document.getElementById('startPauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const scaler = document.getElementById('scaler');
+
+        // 1. 自動縮放邏輯 (確保在 Keynote 中拉大拉小都清晰)
+        function autoScale() {
+            const winWidth = window.innerWidth;
+            const winHeight = window.innerHeight;
+            const scale = Math.min(winWidth / 100, winHeight / 100);
+            scaler.style.transform = `scale(${scale * 0.9})`; 
+        }
+        window.addEventListener('resize', autoScale);
+        window.addEventListener('load', autoScale);
+
+        // 2. 時間格式化 (秒轉成 00:00)
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = (seconds % 60).toString().padStart(2, '0');
+            return `${mins}:${secs}`;
+        }
+
+        // 3. 正計時核心邏輯
+        function timer() {
+            totalSeconds++; // 改為每次加 1 秒，沒有時間上限
+            timeInput.value = formatTime(totalSeconds);
+        }
+
+        // 4. 開始 / 暫停按鈕事件
+        startPauseBtn.addEventListener('click', () => {
+            if (isRunning) {
+                // 暫停
+                clearInterval(countdown);
+                isRunning = false;
+                startPauseBtn.textContent = '開始';
+                startPauseBtn.classList.remove('paused');
+            } else {
+                // 開始或繼續計時
+                isRunning = true;
+                startPauseBtn.textContent = '暫停';
+                startPauseBtn.classList.add('paused');
+                countdown = setInterval(timer, 1000);
+            }
+        });
+
+        // 5. 重置按鈕事件
+        resetBtn.addEventListener('click', () => {
+            clearInterval(countdown);
+            isRunning = false;
+            startPauseBtn.textContent = '開始';
+            startPauseBtn.classList.remove('paused');
+            totalSeconds = 0; // 秒數歸零
+            timeInput.value = "00:00"; // 畫面顯示歸零
+        });
+    </script>
+</body>
+</html>
